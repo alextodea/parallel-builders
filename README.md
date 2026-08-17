@@ -47,6 +47,72 @@ Repair is not regeneration. "Try again" costs what the first round cost; handing
 
 Capped at two rounds, then it comes to you.
 
+## Architecture
+
+Every box below is a Go package. Colour is status, not category.
+
+```mermaid
+flowchart TD
+    CLI["<b>cmd/pb</b><br/>init · run · bench · doctor"]:::partial
+    CFG["<b>internal/config</b><br/>who the agents are,<br/>what the gate runs"]:::partial
+
+    CLI --> CFG
+    CLI --> ORCH
+
+    ORCH["<b>cmd/pb · cmdRun</b><br/>the five phases in order<br/>— NOT WRITTEN YET —"]:::missing
+
+    ORCH -->|1| SPEC
+    ORCH -->|2| RACE
+    ORCH -->|3| GATE
+    ORCH -->|4| SEL
+    ORCH -->|5| REP
+
+    SPEC["<b>spec</b><br/>architect writes the tests,<br/>they get frozen"]:::phase
+    RACE["<b>race</b><br/>builders run in parallel,<br/>one worktree each"]:::phase
+    GATE["<b>gate</b><br/>build · lint · tests"]:::phase
+    SEL["<b>select</b><br/>who won, or what next"]:::phase
+    REP["<b>report</b><br/>one JSON line per run"]:::phase
+
+    SPEC --> AGENT
+    SPEC --> FROZEN
+    RACE --> POOL
+    RACE --> AGENT
+    GATE --> GATEPKG
+    GATE --> FROZEN
+    SEL --> SELECTOR
+    SEL --> ESCALATE
+    REP --> RECORD
+
+    AGENT["<b>internal/agent</b><br/>Runner interface<br/>Exec · Fake"]:::done
+    FROZEN["<b>internal/frozen</b><br/>builders may not<br/>edit the tests"]:::done
+    SELECTOR["<b>internal/selector</b><br/>disqualify, then<br/>the tie-break ladder"]:::done
+    ESCALATE["<b>internal/escalate</b><br/>same failures → architect<br/>different → self-repair"]:::done
+    POOL["<b>internal/pool</b><br/>reusable worktrees"]:::stub
+    GATEPKG["<b>internal/gate</b><br/>run commands,<br/>report what failed"]:::partial
+    RECORD["<b>internal/record</b><br/>JSONL"]:::partial
+    BENCH["<b>internal/bench</b><br/>race-2 vs solo-cheap<br/>vs solo-frontier"]:::stub
+
+    CLI -.-> BENCH
+
+    classDef done fill:#e2f0e8,stroke:#1c6640,stroke-width:2px,color:#14201e
+    classDef partial fill:#fbeadf,stroke:#b04a18,stroke-width:2px,color:#1a1a1d
+    classDef stub fill:#eeeeee,stroke:#999999,stroke-width:1px,stroke-dasharray:4 3,color:#555555
+    classDef missing fill:#ffffff,stroke:#b04a18,stroke-width:2px,stroke-dasharray:6 4,color:#b04a18
+    classDef phase fill:#f7f7f8,stroke:#bcbcc4,stroke-width:1px,color:#1a1a1d
+```
+
+🟩 implemented and tested  🟧 partial  ⬜ stub  ⬛ not written
+
+### The honest read of that picture
+
+**The leaves are real. The trunk is not.**
+
+Every `internal/` package currently imports *nothing* from this repo — they are independent, pure, and unit-testable, which is why three of them are already finished and covered. But it also means **nothing calls anything yet**. `cmdRun` is where they get assembled, and it is a list of TODOs.
+
+That ordering was deliberate. The subtle parts are the leaves — what disqualifies a candidate, how you tell a spec problem from a coding mistake, which glob counts as a test file. Those are pure functions, so they can be got right in isolation and proven with tests. The wiring is mechanical by comparison, but it can't be written until `pool` and `gate` are real, because it has nothing to hold.
+
+**Read it in this order** if you want to understand the tool: `selector` → `escalate` → `frozen`. Roughly 400 lines, no dependencies, and between them they contain every decision the system makes.
+
 ## Status
 
 Early. The design is settled; most of the implementation is not.
