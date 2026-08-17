@@ -156,8 +156,14 @@ func ValidRepo(s string) bool {
 	return true
 }
 
-// Confirm defaults to yes.
+// Confirm defaults to yes. It writes its own prompt rather than going through
+// Ask, which would render the default twice: "Correct? [Y/n] [y]:".
 func (p *Prompter) Confirm(question string) bool {
-	ans := strings.ToLower(p.Ask(question+" [Y/n]", "y"))
+	fmt.Fprintf(p.Out, "  %s [Y/n]: ", question)
+	line, err := p.In.ReadString('\n')
+	if err != nil && line == "" {
+		return true
+	}
+	ans := strings.ToLower(strings.TrimSpace(line))
 	return ans == "" || strings.HasPrefix(ans, "y")
 }
