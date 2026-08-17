@@ -22,7 +22,7 @@ flags:
 `
 
 func main() {
-	cfgPath := flag.String("c", ".pb.toml", "config file")
+	cfgPath := flag.String("c", config.FileName, "config file")
 	flag.Usage = func() { fmt.Fprint(os.Stderr, usage) }
 	flag.Parse()
 
@@ -55,15 +55,6 @@ func dispatch(cmd string, args []string, cfgPath string) error {
 	}
 }
 
-func cmdInit(path string) error {
-	if _, err := os.Stat(path); err == nil {
-		return fmt.Errorf("%s already exists", path)
-	}
-	// TODO: marshal config.Default() to TOML once the dependency is added.
-	fmt.Printf("would write %s\n", path)
-	return nil
-}
-
 func cmdRun(cfgPath, task string) error {
 	cfg, err := config.Load(cfgPath)
 	if err != nil {
@@ -92,8 +83,11 @@ func cmdDoctor(cfgPath string) error {
 	if err != nil {
 		return err
 	}
-	fmt.Println("architect:", cfg.Agents.Architect)
-	fmt.Println("builders: ", cfg.Agents.Builders)
+	fmt.Println("repo:      ", cfg.Repo)
+	fmt.Println("architect: ", cfg.Architect.Label())
+	for _, b := range cfg.Builders {
+		fmt.Println("builder:   ", b.Label())
+	}
 	// TODO: check each agent resolves on PATH, that git works, and that the
 	// gate commands run green in a clean worktree before anything else.
 	return nil
