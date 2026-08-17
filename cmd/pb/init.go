@@ -46,9 +46,6 @@ func cmdInit(path string) error {
 		p.Say("")
 		p.Say("      %s", remote)
 		p.Say("")
-		p.Say("  If that is not the right repository, answer n — then run")
-		p.Say("  `pb init` again from inside the one you want.")
-		p.Say("")
 		if !p.Confirm("Correct?") {
 			return errWrongRepo
 		}
@@ -69,8 +66,12 @@ func cmdInit(path string) error {
 	p.Say("  defines \"done\". It runs once per feature, and everything")
 	p.Say("  afterwards is graded against what it writes.")
 	p.Say("")
-	p.Say("  Use your best model here. This is the one call worth paying for —")
-	p.Say("  if these tests are wrong, everything downstream is wrong too.")
+	p.Say("  Put your strongest model here. If these tests are wrong,")
+	p.Say("  everything downstream is wrong too.")
+	p.Say("")
+	p.Say("  Two things to pick, and they are not the same:")
+	p.Say("      agent   the CLI program that runs on your machine")
+	p.Say("      model   which model that CLI talks to, set by its own flags")
 	p.Say("")
 
 	if len(installed) == 0 {
@@ -79,15 +80,15 @@ func cmdInit(path string) error {
 	}
 	archCmd := p.AskChoice("agent", installed, first(installed, "claude"))
 	p.Say("")
-	p.Say("  Model and reasoning flags are passed straight to that agent —")
-	p.Say("  pb does not know which models you have access to, so use the")
-	p.Say("  same flags you would type yourself.")
+	p.Say("  Now the model, as flags for that agent. pb passes these straight")
+	p.Say("  through and cannot check them — it has no list of the models you")
+	p.Say("  have access to. Use exactly what you would type yourself.")
 	p.Say("")
 	p.Say("      e.g.  --model claude-fable-5 --reasoning high")
 	p.Say("")
 	cfg.Architect = config.Agent{
 		Cmd:     archCmd,
-		Args:    splitArgs(p.Ask("flags (blank for the agent's default)", "")),
+		Args:    splitArgs(p.Ask("model flags (blank for the agent's default)", "")),
 		Timeout: "10m",
 	}
 
@@ -100,8 +101,9 @@ func cmdInit(path string) error {
 	p.Say("")
 	p.Say("  Whichever implementation passes wins. The rest are thrown away.")
 	p.Say("")
-	p.Say("  Two different models beats two runs of the same one — you want")
-	p.Say("  them to make different mistakes, not the same mistake twice.")
+	p.Say("  Give them different models — you want different mistakes, not")
+	p.Say("  the same mistake twice. The same agent listed twice with two")
+	p.Say("  different --model flags is exactly right.")
 	p.Say("")
 
 	n := p.AskInt("how many", 2, 1, 10)
@@ -116,7 +118,7 @@ func cmdInit(path string) error {
 		p.Say("")
 		p.Say("  builder %d of %d", i+1, n)
 		cmd := p.AskChoice("agent", installed, first(installed, "opencode"))
-		args := splitArgs(p.Ask("flags", ""))
+		args := splitArgs(p.Ask("model flags", ""))
 		name := p.Ask("short name (shown in results)", suggestName(cmd, args, i))
 		cfg.Builders = append(cfg.Builders, config.Agent{
 			Name: name, Cmd: cmd, Args: args, Timeout: "10m",
@@ -166,6 +168,40 @@ func cmdInit(path string) error {
 		}
 		p.Say("  %-12s %-14s %s", label, b.Label(), describe(b))
 	}
+	// ---- verify ---------------------------------------------------------
+	//
+	// A misspelled or retired model name cannot be caught by inspection —
+	// pb has no list of the models you can reach. The only way to know is
+	// to run each agent once. Doing it here costs a fraction of a cent;
+	// skipping it means finding out several minutes into a run, after the
+	// other builders have already been paid for.
+	p.Say("")
+	p.Say("─── check ────────────────────────────────────────────────")
+	p.Say("")
+	p.Say("  pb can run each agent once now, with a one-word prompt, to")
+	p.Say("  confirm the flags are accepted. It is the only way to catch a")
+	p.Say("  model name that is misspelled or outside your plan.")
+	p.Say("")
+
+	if p.Confirm("Run the check?") {
+		p.Say("")
+		if !checkAgents(os.Stdout, cfg, true) {
+			p.Say("")
+			p.Say("  %s is written, but something above is not usable.", path)
+			p.Say("  Fix it there and re-check with `pb doctor --live`.")
+			p.Say("")
+			return nil
+		}
+	} else {
+		p.Say("")
+		if !checkAgents(os.Stdout, cfg, false) {
+			p.Say("")
+			p.Say("  Fix the above, then `pb doctor`.")
+			p.Say("")
+			return nil
+		}
+	}
+
 	p.Say("")
 	p.Say("  Next:  pb run \"describe the feature you want\"")
 	p.Say("")

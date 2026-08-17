@@ -15,7 +15,8 @@ usage:
   pb init                 write a .pb.toml with sensible defaults
   pb run <task>           spec, race, gate, select, report
   pb bench                run the arms and print the comparison
-  pb doctor               check agents and toolchain are present
+  pb doctor [--live]      check the configured agents work
+                          --live actually runs each one (costs a little)
 
 flags:
   -c <path>   config file (default .pb.toml)
@@ -49,7 +50,8 @@ func dispatch(cmd string, args []string, cfgPath string) error {
 	case "bench":
 		return cmdBench(cfgPath)
 	case "doctor":
-		return cmdDoctor(cfgPath)
+		live := len(args) > 0 && args[0] == "--live"
+		return cmdDoctor(cfgPath, live)
 	default:
 		return fmt.Errorf("unknown command %q", cmd)
 	}
@@ -76,19 +78,4 @@ func cmdRun(cfgPath, task string) error {
 
 func cmdBench(cfgPath string) error {
 	return fmt.Errorf("bench: not implemented")
-}
-
-func cmdDoctor(cfgPath string) error {
-	cfg, err := config.Load(cfgPath)
-	if err != nil {
-		return err
-	}
-	fmt.Println("repo:      ", cfg.Repo)
-	fmt.Println("architect: ", cfg.Architect.Label())
-	for _, b := range cfg.Builders {
-		fmt.Println("builder:   ", b.Label())
-	}
-	// TODO: check each agent resolves on PATH, that git works, and that the
-	// gate commands run green in a clean worktree before anything else.
-	return nil
 }
