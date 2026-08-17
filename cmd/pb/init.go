@@ -87,8 +87,10 @@ func cmdInit(path string) error {
 	p.Say("      e.g.  --model claude-fable-5 --reasoning high")
 	p.Say("")
 	cfg.Architect = config.Agent{
-		Cmd:     archCmd,
-		Args:    splitArgs(p.Ask("model flags (blank for the agent's default)", "")),
+		Cmd: archCmd,
+		// Headless flags first, then whatever the user adds. pb's
+		// contract is that the prompt is the last argument.
+		Args:    append(setup.HeadlessArgs(archCmd), splitArgs(p.Ask("model flags (blank for the agent's default)", ""))...),
 		Timeout: "10m",
 	}
 
@@ -118,7 +120,7 @@ func cmdInit(path string) error {
 		p.Say("")
 		p.Say("  builder %d of %d", i+1, n)
 		cmd := p.AskChoice("agent", installed, first(installed, "opencode"))
-		args := splitArgs(p.Ask("model flags", ""))
+		args := append(setup.HeadlessArgs(cmd), splitArgs(p.Ask("model flags", ""))...)
 		name := p.Ask("short name (shown in results)", suggestName(cmd, args, i))
 		cfg.Builders = append(cfg.Builders, config.Agent{
 			Name: name, Cmd: cmd, Args: args, Timeout: "10m",

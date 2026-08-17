@@ -76,3 +76,26 @@ func TestAskChoiceAcceptsNumberOrTypedName(t *testing.T) {
 		t.Errorf("typing a name should be accepted, got %q", got)
 	}
 }
+
+func TestHeadlessArgsPreventInteractiveHang(t *testing.T) {
+	// Every one of these opens a TUI when invoked bare, which does not fail
+	// — it hangs, holding a worktree until the timeout expires.
+	for _, cmd := range []string{"claude", "opencode", "codex"} {
+		if len(HeadlessArgs(cmd)) == 0 {
+			t.Errorf("%s has no headless args; a default config using it would hang", cmd)
+		}
+	}
+
+	// Unknown agents get nothing, which is a defensible guess — the live
+	// check in `pb init` surfaces it either way.
+	if got := HeadlessArgs("some-future-agent"); len(got) != 0 {
+		t.Errorf("unknown agent should get no args, got %v", got)
+	}
+
+	// Callers append to the result, so it must not alias the package map.
+	a := HeadlessArgs("claude")
+	a = append(a, "--model", "x")
+	if len(HeadlessArgs("claude")) != 1 {
+		t.Error("HeadlessArgs returned a slice aliasing the package map")
+	}
+}

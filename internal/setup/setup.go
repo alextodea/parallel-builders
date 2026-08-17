@@ -17,6 +17,30 @@ import (
 // they are offered as defaults, and anything runnable can be typed instead.
 var KnownAgents = []string{"claude", "codex", "opencode", "pi", "copilot", "cursor-agent"}
 
+// headlessArgs are the flags each agent needs to run without a terminal UI.
+//
+// This matters more than it looks. Every one of these CLIs opens an
+// interactive session when invoked bare, so a config without them does not
+// fail — it hangs, holding a worktree, until the timeout expires.
+//
+// pb's contract is that the prompt is the final argument, which both shapes
+// below satisfy: a flag (claude -p "…") and a subcommand (opencode run "…").
+var headlessArgs = map[string][]string{
+	"claude":       {"-p"},
+	"opencode":     {"run"},
+	"codex":        {"exec"},
+	"copilot":      {"-p"},
+	"cursor-agent": {"-p"},
+}
+
+// HeadlessArgs returns the flags that make an agent non-interactive, or nil if
+// pb does not know that agent. nil is a reasonable default: an unknown CLI is
+// as likely to need nothing as to need something, and the live check in
+// `pb init` will surface it either way.
+func HeadlessArgs(cmd string) []string {
+	return append([]string{}, headlessArgs[cmd]...)
+}
+
 // Installed returns the subset of KnownAgents present on PATH.
 func Installed() []string {
 	var found []string
