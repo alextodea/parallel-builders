@@ -135,17 +135,6 @@ go test ./...
 
 No dependencies yet, on purpose.
 
-## Design notes
-
-Written up in more detail before any code existed:
-
-- **[Two Builders, One Gate](https://claude.ai/code/artifact/a66749fa-4c1b-452d-af7c-c714ed9bbc34)** — the build spec: phases, contracts, worked runs, benchmark design
-- **[Tests Before Judges](https://claude.ai/code/artifact/77370d62-bf8f-4520-9862-28e7a93da50b)** — why the architecture is shaped this way
-
-## Prior art
-
-[`no-mistakes`](https://github.com/kunchenguid/no-mistakes) and [`treehouse`](https://github.com/kunchenguid/treehouse) by Kun Chen solve overlapping problems and are worth reading. Two ideas here are borrowed directly: the auto-fix / ask-user split in how findings are handled, and re-reviewing a fix in a *fresh* session so the reviewer certifying a change is never the one that demanded it.
-
 ## Licence
 
 MIT
