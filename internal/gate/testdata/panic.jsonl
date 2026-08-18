@@ -1,0 +1,24 @@
+{"Time":"2026-08-18T11:15:10.54504+02:00","Action":"start","Package":"gen/pkg"}
+{"Time":"2026-08-18T11:15:11.013885+02:00","Action":"run","Package":"gen/pkg","Test":"TestOne"}
+{"Time":"2026-08-18T11:15:11.014009+02:00","Action":"output","Package":"gen/pkg","Test":"TestOne","Output":"=== RUN   TestOne\n"}
+{"Time":"2026-08-18T11:15:11.01415+02:00","Action":"output","Package":"gen/pkg","Test":"TestOne","Output":"--- FAIL: TestOne (0.00s)\n"}
+{"Time":"2026-08-18T11:15:11.016552+02:00","Action":"output","Package":"gen/pkg","Test":"TestOne","Output":"panic: runtime error: invalid memory address or nil pointer dereference [recovered]\n"}
+{"Time":"2026-08-18T11:15:11.016624+02:00","Action":"output","Package":"gen/pkg","Test":"TestOne","Output":"\tpanic: runtime error: invalid memory address or nil pointer dereference\n"}
+{"Time":"2026-08-18T11:15:11.016657+02:00","Action":"output","Package":"gen/pkg","Test":"TestOne","Output":"[signal SIGSEGV: segmentation violation code=0x2 addr=0x0 pc=0x104bc7e64]\n"}
+{"Time":"2026-08-18T11:15:11.016677+02:00","Action":"output","Package":"gen/pkg","Test":"TestOne","Output":"\n"}
+{"Time":"2026-08-18T11:15:11.016706+02:00","Action":"output","Package":"gen/pkg","Test":"TestOne","Output":"goroutine 18 [running]:\n"}
+{"Time":"2026-08-18T11:15:11.016726+02:00","Action":"output","Package":"gen/pkg","Test":"TestOne","Output":"testing.tRunner.func1.2({0x104c244e0, 0x104d29a50})\n"}
+{"Time":"2026-08-18T11:15:11.016758+02:00","Action":"output","Package":"gen/pkg","Test":"TestOne","Output":"\t/opt/homebrew/Cellar/go/1.24.2/libexec/src/testing/testing.go:1734 +0x1ac\n"}
+{"Time":"2026-08-18T11:15:11.016778+02:00","Action":"output","Package":"gen/pkg","Test":"TestOne","Output":"testing.tRunner.func1()\n"}
+{"Time":"2026-08-18T11:15:11.016797+02:00","Action":"output","Package":"gen/pkg","Test":"TestOne","Output":"\t/opt/homebrew/Cellar/go/1.24.2/libexec/src/testing/testing.go:1737 +0x334\n"}
+{"Time":"2026-08-18T11:15:11.016827+02:00","Action":"output","Package":"gen/pkg","Test":"TestOne","Output":"panic({0x104c244e0?, 0x104d29a50?})\n"}
+{"Time":"2026-08-18T11:15:11.016862+02:00","Action":"output","Package":"gen/pkg","Test":"TestOne","Output":"\t/opt/homebrew/Cellar/go/1.24.2/libexec/src/runtime/panic.go:792 +0x124\n"}
+{"Time":"2026-08-18T11:15:11.016882+02:00","Action":"output","Package":"gen/pkg","Test":"TestOne","Output":"gen/pkg.TestOne(0x14000102700?)\n"}
+{"Time":"2026-08-18T11:15:11.016901+02:00","Action":"output","Package":"gen/pkg","Test":"TestOne","Output":"\t/private/tmp/claude-501/-Users-builder/bff821bd-9907-4557-bb29-3080eb0dbe93/scratchpad/fixtures/gen/pkg/a_test.go:3 +0x4\n"}
+{"Time":"2026-08-18T11:15:11.016933+02:00","Action":"output","Package":"gen/pkg","Test":"TestOne","Output":"testing.tRunner(0x14000102700, 0x104c4a4a8)\n"}
+{"Time":"2026-08-18T11:15:11.016952+02:00","Action":"output","Package":"gen/pkg","Test":"TestOne","Output":"\t/opt/homebrew/Cellar/go/1.24.2/libexec/src/testing/testing.go:1792 +0xe4\n"}
+{"Time":"2026-08-18T11:15:11.016971+02:00","Action":"output","Package":"gen/pkg","Test":"TestOne","Output":"created by testing.(*T).Run in goroutine 1\n"}
+{"Time":"2026-08-18T11:15:11.016989+02:00","Action":"output","Package":"gen/pkg","Test":"TestOne","Output":"\t/opt/homebrew/Cellar/go/1.24.2/libexec/src/testing/testing.go:1851 +0x374\n"}
+{"Time":"2026-08-18T11:15:11.018347+02:00","Action":"fail","Package":"gen/pkg","Test":"TestOne","Elapsed":0}
+{"Time":"2026-08-18T11:15:11.01839+02:00","Action":"output","Package":"gen/pkg","Output":"FAIL\tgen/pkg\t0.473s\n"}
+{"Time":"2026-08-18T11:15:11.01842+02:00","Action":"fail","Package":"gen/pkg","Elapsed":0.473}

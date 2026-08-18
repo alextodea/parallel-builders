@@ -1,0 +1,22 @@
+{"Time":"2026-08-18T11:15:09.889629+02:00","Action":"start","Package":"gen/pkg"}
+{"Time":"2026-08-18T11:15:10.256196+02:00","Action":"run","Package":"gen/pkg","Test":"TestOne"}
+{"Time":"2026-08-18T11:15:10.256419+02:00","Action":"output","Package":"gen/pkg","Test":"TestOne","Output":"=== RUN   TestOne\n"}
+{"Time":"2026-08-18T11:15:10.256477+02:00","Action":"output","Package":"gen/pkg","Test":"TestOne","Output":"    a_test.go:3: boom\n"}
+{"Time":"2026-08-18T11:15:10.256513+02:00","Action":"output","Package":"gen/pkg","Test":"TestOne","Output":"--- FAIL: TestOne (0.00s)\n"}
+{"Time":"2026-08-18T11:15:10.256537+02:00","Action":"fail","Package":"gen/pkg","Test":"TestOne","Elapsed":0}
+{"Time":"2026-08-18T11:15:10.256564+02:00","Action":"run","Package":"gen/pkg","Test":"TestTwo"}
+{"Time":"2026-08-18T11:15:10.256591+02:00","Action":"output","Package":"gen/pkg","Test":"TestTwo","Output":"=== RUN   TestTwo\n"}
+{"Time":"2026-08-18T11:15:10.256612+02:00","Action":"run","Package":"gen/pkg","Test":"TestTwo/alpha"}
+{"Time":"2026-08-18T11:15:10.256633+02:00","Action":"output","Package":"gen/pkg","Test":"TestTwo/alpha","Output":"=== RUN   TestTwo/alpha\n"}
+{"Time":"2026-08-18T11:15:10.256657+02:00","Action":"output","Package":"gen/pkg","Test":"TestTwo/alpha","Output":"--- PASS: TestTwo/alpha (0.00s)\n"}
+{"Time":"2026-08-18T11:15:10.256692+02:00","Action":"pass","Package":"gen/pkg","Test":"TestTwo/alpha","Elapsed":0}
+{"Time":"2026-08-18T11:15:10.256835+02:00","Action":"run","Package":"gen/pkg","Test":"TestTwo/beta"}
+{"Time":"2026-08-18T11:15:10.256851+02:00","Action":"output","Package":"gen/pkg","Test":"TestTwo/beta","Output":"=== RUN   TestTwo/beta\n"}
+{"Time":"2026-08-18T11:15:10.256866+02:00","Action":"output","Package":"gen/pkg","Test":"TestTwo/beta","Output":"    a_test.go:6: nope\n"}
+{"Time":"2026-08-18T11:15:10.256885+02:00","Action":"output","Package":"gen/pkg","Test":"TestTwo/beta","Output":"--- FAIL: TestTwo/beta (0.00s)\n"}
+{"Time":"2026-08-18T11:15:10.25745+02:00","Action":"fail","Package":"gen/pkg","Test":"TestTwo/beta","Elapsed":0}
+{"Time":"2026-08-18T11:15:10.257495+02:00","Action":"output","Package":"gen/pkg","Test":"TestTwo","Output":"--- FAIL: TestTwo (0.00s)\n"}
+{"Time":"2026-08-18T11:15:10.257513+02:00","Action":"fail","Package":"gen/pkg","Test":"TestTwo","Elapsed":0}
+{"Time":"2026-08-18T11:15:10.257533+02:00","Action":"output","Package":"gen/pkg","Output":"FAIL\n"}
+{"Time":"2026-08-18T11:15:10.258227+02:00","Action":"output","Package":"gen/pkg","Output":"FAIL\tgen/pkg\t0.368s\n"}
+{"Time":"2026-08-18T11:15:10.258269+02:00","Action":"fail","Package":"gen/pkg","Elapsed":0.369}

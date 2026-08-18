@@ -1,0 +1,16 @@
+{"Time":"2026-08-18T11:15:09.23048+02:00","Action":"start","Package":"gen/pkg"}
+{"Time":"2026-08-18T11:15:09.691469+02:00","Action":"run","Package":"gen/pkg","Test":"TestOne"}
+{"Time":"2026-08-18T11:15:09.691614+02:00","Action":"output","Package":"gen/pkg","Test":"TestOne","Output":"=== RUN   TestOne\n"}
+{"Time":"2026-08-18T11:15:09.691742+02:00","Action":"output","Package":"gen/pkg","Test":"TestOne","Output":"--- PASS: TestOne (0.00s)\n"}
+{"Time":"2026-08-18T11:15:09.691763+02:00","Action":"pass","Package":"gen/pkg","Test":"TestOne","Elapsed":0}
+{"Time":"2026-08-18T11:15:09.691786+02:00","Action":"run","Package":"gen/pkg","Test":"TestTwo"}
+{"Time":"2026-08-18T11:15:09.691801+02:00","Action":"output","Package":"gen/pkg","Test":"TestTwo","Output":"=== RUN   TestTwo\n"}
+{"Time":"2026-08-18T11:15:09.691816+02:00","Action":"run","Package":"gen/pkg","Test":"TestTwo/sub"}
+{"Time":"2026-08-18T11:15:09.69183+02:00","Action":"output","Package":"gen/pkg","Test":"TestTwo/sub","Output":"=== RUN   TestTwo/sub\n"}
+{"Time":"2026-08-18T11:15:09.691846+02:00","Action":"output","Package":"gen/pkg","Test":"TestTwo/sub","Output":"--- PASS: TestTwo/sub (0.00s)\n"}
+{"Time":"2026-08-18T11:15:09.691877+02:00","Action":"pass","Package":"gen/pkg","Test":"TestTwo/sub","Elapsed":0}
+{"Time":"2026-08-18T11:15:09.691907+02:00","Action":"output","Package":"gen/pkg","Test":"TestTwo","Output":"--- PASS: TestTwo (0.00s)\n"}
+{"Time":"2026-08-18T11:15:09.691923+02:00","Action":"pass","Package":"gen/pkg","Test":"TestTwo","Elapsed":0}
+{"Time":"2026-08-18T11:15:09.691938+02:00","Action":"output","Package":"gen/pkg","Output":"PASS\n"}
+{"Time":"2026-08-18T11:15:09.69291+02:00","Action":"output","Package":"gen/pkg","Output":"ok  \tgen/pkg\t0.462s\n"}
+{"Time":"2026-08-18T11:15:09.695975+02:00","Action":"pass","Package":"gen/pkg","Elapsed":0.465}

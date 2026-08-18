@@ -1,0 +1,6 @@
+{"ImportPath":"gen/pkg [gen/pkg.test]","Action":"build-output","Output":"# gen/pkg [gen/pkg.test]\n"}
+{"ImportPath":"gen/pkg [gen/pkg.test]","Action":"build-output","Output":"pkg/a_test.go:3:30: undefined: NotDefinedAnywhere\n"}
+{"ImportPath":"gen/pkg [gen/pkg.test]","Action":"build-fail"}
+{"Time":"2026-08-18T11:15:10.372005+02:00","Action":"start","Package":"gen/pkg"}
+{"Time":"2026-08-18T11:15:10.372055+02:00","Action":"output","Package":"gen/pkg","Output":"FAIL\tgen/pkg [build failed]\n"}
+{"Time":"2026-08-18T11:15:10.372062+02:00","Action":"fail","Package":"gen/pkg","Elapsed":0,"FailedBuild":"gen/pkg [gen/pkg.test]"}
