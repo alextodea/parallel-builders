@@ -16,6 +16,7 @@ import (
 	"github.com/alextodea/parallel-builders/internal/config"
 	"github.com/alextodea/parallel-builders/internal/pool"
 	"github.com/alextodea/parallel-builders/internal/run"
+	"github.com/alextodea/parallel-builders/internal/sandbox"
 )
 
 // cmdRun executes one feature end to end.
@@ -65,11 +66,21 @@ func cmdRun(cfgPath, briefPath string) error {
 	}
 	defer p.ReleaseAll()
 
+	// Confinement. Agents get the network profile (they must reach a model);
+	// gate commands are confined separately inside run with no network.
+	mode := sandbox.Mode(cfg.SandboxMode())
+	if err := checkSandbox(mode); err != nil {
+		return err
+	}
+	agentWrap := func(dir string, argv []string) ([]string, func(), error) {
+		return sandbox.Spec{Mode: mode, Worktree: dir, Network: true}.Wrap(argv)
+	}
+
 	timeout := cfg.Architect.Duration()
 	builders := make([]agent.Runner, 0, len(cfg.Builders))
 	for _, bc := range cfg.Builders {
 		builders = append(builders, agent.Exec{
-			Cmd: bc.Cmd, Args: bc.Args, Timeout: bc.Duration(),
+			Cmd: bc.Cmd, Args: bc.Args, Timeout: bc.Duration(), Wrap: agentWrap,
 		})
 	}
 
@@ -79,10 +90,11 @@ func cmdRun(cfgPath, briefPath string) error {
 		Config: cfg,
 		Brief:  b,
 		Architect: agent.Exec{
-			Cmd: cfg.Architect.Cmd, Args: cfg.Architect.Args, Timeout: timeout,
+			Cmd: cfg.Architect.Cmd, Args: cfg.Architect.Args, Timeout: timeout, Wrap: agentWrap,
 		},
 		Builders: builders,
 		Pool:     p,
+		Sandbox:  mode,
 		Out:      os.Stdout,
 	})
 	if err != nil {
@@ -139,6 +151,23 @@ func firstLine(s string) string {
 		return s[:i]
 	}
 	return s
+}
+
+// checkSandbox validates the mode is usable, and refuses to run unconfined
+// unless the user asked for it explicitly. Unconfined is a real choice with
+// real consequences — pb runs agents and untrusted repo code — so it is never
+// something you get by accident.
+func checkSandbox(mode sandbox.Mode) error {
+	resolved := sandbox.Resolve(mode)
+	if resolved == sandbox.None {
+		if mode == sandbox.None {
+			fmt.Fprintln(os.Stderr, "  ⚠ sandbox: none — agents and test code run UNCONFINED on this machine")
+			return nil
+		}
+		return fmt.Errorf("sandbox: no confinement available here (need macOS sandbox-exec or Linux bwrap)\n"+
+			"       install one, or set sandbox.mode = \"none\" in %s to run unconfined on purpose", config.FileName)
+	}
+	return nil
 }
 
 func repoRoot() (string, error) {

@@ -28,9 +28,27 @@ type Config struct {
 	Architect Agent   `toml:"architect"`
 	Builders  []Agent `toml:"builders"`
 
-	Gate  Gate  `toml:"gate"`
-	Tests Tests `toml:"tests"`
-	Pool  Pool  `toml:"pool"`
+	Gate    Gate    `toml:"gate"`
+	Tests   Tests   `toml:"tests"`
+	Pool    Pool    `toml:"pool"`
+	Sandbox Sandbox `toml:"sandbox"`
+}
+
+// Sandbox controls how spawned processes are confined. The zero value means
+// "auto" — pb confines by default, because it runs agents and untrusted repo
+// code unattended, and unconfined is a choice a user should have to make out
+// loud rather than get by omission.
+type Sandbox struct {
+	// Mode is "auto" (default), "seatbelt", "bwrap", or "none".
+	Mode string `toml:"mode,omitempty"`
+}
+
+// SandboxMode returns the configured mode, defaulting to auto.
+func (c Config) SandboxMode() string {
+	if c.Sandbox.Mode == "" {
+		return "auto"
+	}
+	return c.Sandbox.Mode
 }
 
 // Agent is one runnable coding agent.

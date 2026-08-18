@@ -24,17 +24,32 @@ type Report struct {
 	Wall     time.Duration
 }
 
+// WrapFunc optionally confines a command. It takes the argv and returns a
+// possibly-wrapped argv plus a cleanup to run afterwards. nil means no
+// confinement. Gate commands run untrusted repository code, so in the pipeline
+// this is always the no-network sandbox.
+type WrapFunc func(argv []string) (wrapped []string, cleanup func(), err error)
+
 // Run executes steps in order and stops at the first failure. Order matters:
 // cheapest check first, so a candidate that will not compile never costs you a
 // test-suite run.
-func Run(ctx context.Context, dir string, steps []Step) Report {
+func Run(ctx context.Context, dir string, steps []Step, wrap WrapFunc) Report {
 	start := time.Now()
 
 	for _, s := range steps {
 		if strings.TrimSpace(s.Cmd) == "" {
 			continue
 		}
-		cmd := exec.CommandContext(ctx, "sh", "-c", s.Cmd)
+		argv := []string{"sh", "-c", s.Cmd}
+		if wrap != nil {
+			wrapped, cleanup, err := wrap(argv)
+			if err != nil {
+				return Report{FailedAt: s.Name, Output: "sandbox: " + err.Error(), Wall: time.Since(start)}
+			}
+			argv = wrapped
+			defer cleanup()
+		}
+		cmd := exec.CommandContext(ctx, argv[0], argv[1:]...)
 		cmd.Dir = dir
 		out, err := cmd.CombinedOutput()
 		if err != nil {
@@ -48,9 +63,3 @@ func Run(ctx context.Context, dir string, steps []Step) Report {
 
 	return Report{Passed: true, Wall: time.Since(start)}
 }
-
-// TODO: parse failing test names out of the test step's output so
-// escalate.Decide can compare failure sets. This is per-language and is the
-// one place the tool has to know something about the toolchain — start with
-// `go test` output, add others behind an interface.
-func FailingTests(output string) []string { return nil }

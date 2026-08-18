@@ -33,6 +33,13 @@ type Exec struct {
 	Cmd     string
 	Args    []string
 	Timeout time.Duration
+
+	// Wrap optionally confines the process. It receives the working directory
+	// (the sandbox confines writes to it) and the argv, and returns a
+	// possibly-wrapped argv plus a cleanup to run when the command finishes.
+	// Injected rather than imported so this package stays free of the sandbox
+	// dependency and remains trivially testable.
+	Wrap func(dir string, argv []string) (wrapped []string, cleanup func(), err error)
 }
 
 func (e Exec) Name() string { return e.Cmd }
@@ -44,7 +51,17 @@ func (e Exec) Run(ctx context.Context, dir, prompt string) (Result, error) {
 		defer cancel()
 	}
 
-	cmd := exec.CommandContext(ctx, e.Cmd, append(e.Args, prompt)...)
+	argv := append([]string{e.Cmd}, append(e.Args, prompt)...)
+	if e.Wrap != nil {
+		wrapped, cleanup, err := e.Wrap(dir, argv)
+		if err != nil {
+			return Result{}, err
+		}
+		defer cleanup()
+		argv = wrapped
+	}
+
+	cmd := exec.CommandContext(ctx, argv[0], argv[1:]...)
 	cmd.Dir = dir
 
 	// Close stdin explicitly. Agent CLIs run in "print" mode still block

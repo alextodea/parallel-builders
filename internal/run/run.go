@@ -31,6 +31,7 @@ import (
 	"github.com/alextodea/parallel-builders/internal/gate"
 	"github.com/alextodea/parallel-builders/internal/pool"
 	"github.com/alextodea/parallel-builders/internal/prompt"
+	"github.com/alextodea/parallel-builders/internal/sandbox"
 	"github.com/alextodea/parallel-builders/internal/selector"
 )
 
@@ -46,6 +47,12 @@ type Options struct {
 
 	Pool *pool.Pool
 	Out  io.Writer
+
+	// Sandbox confines the gate and test commands, which run untrusted
+	// repository code. It is always the no-network profile here — build and
+	// test code has no business reaching the network. Agents are confined
+	// separately (with network) by their own Wrap, set where they are built.
+	Sandbox sandbox.Mode
 
 	// prompts accumulates every prompt actually sent, so the run record can
 	// carry the version and total redaction count. Shared across the
@@ -314,7 +321,7 @@ func (o Options) vacuity(ctx context.Context, dir string) error {
 	parser, _ := gate.ParserFor(o.Config.Gate.Test)
 	cmd := parser.Command(o.Config.Gate.Test)
 
-	stdout, stderr, code := runShell(ctx, dir, cmd)
+	stdout, stderr, code := runShell(ctx, dir, cmd, gateWrap(o.Sandbox, dir))
 	res := parser.Parse(stdout, stderr, code)
 
 	if res.Crashed {
@@ -418,13 +425,13 @@ func (o Options) gateOne(ctx context.Context, c Candidate, dir string) Candidate
 		{Name: "build", Cmd: o.Config.Gate.Build},
 		{Name: "lint", Cmd: o.Config.Gate.Lint},
 	}
-	c.Gate = gate.Run(ctx, dir, steps)
+	c.Gate = gate.Run(ctx, dir, steps, gate.WrapFunc(gateWrap(o.Sandbox, dir)))
 	if !c.Gate.Passed {
 		return c
 	}
 
 	parser, _ := gate.ParserFor(o.Config.Gate.Test)
-	stdout, stderr, code := runShell(ctx, dir, parser.Command(o.Config.Gate.Test))
+	stdout, stderr, code := runShell(ctx, dir, parser.Command(o.Config.Gate.Test), gateWrap(o.Sandbox, dir))
 	c.Tests = parser.Parse(stdout, stderr, code)
 	c.Gate.Passed = c.Tests.OK()
 	if !c.Tests.OK() {
