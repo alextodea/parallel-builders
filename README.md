@@ -1,10 +1,10 @@
 # parallel-builders
 
-When you use a coding agent the ordinary way, you ask an expensive model for a change and then read its diff to decide whether it's any good. That makes **you** the bottleneck: everything upstream got faster and your review didn't. And a diff is a weak thing to review — you're eyeballing code for correctness, which is exactly the job a computer does better than you and never gets bored doing.
+`pb` keeps you at the two ends of building a feature — describing it, and approving it — and takes you out of the middle, where the code gets written and reviewed.
 
-`pb` inverts that. Instead of an expensive model writing code you then check, an expensive model writes the **tests** — a precise, machine-checkable definition of "done" — and cheap models compete to satisfy them. A compiler decides who won, not you. You specify and approve; you never read a losing diff.
+In between, a strong model turns your description into a test suite, cheap models race to pass those tests in parallel, and the tests decide the winner. You describe the feature; you approve the result; you never read a losing diff.
 
-> **One expensive agent writes the tests. Two cheap agents race to satisfy them. A compiler picks the winner.**
+> **One strong agent writes the tests. Cheap agents race to satisfy them. The tests pick the winner.**
 
 ```
 pb run -brief rate-limit.toml
