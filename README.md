@@ -1,21 +1,21 @@
 # parallel-builders
 
-**One expensive agent writes the tests. Two cheap agents race to satisfy them. A compiler picks the winner.**
+When you use a coding agent the ordinary way, you ask an expensive model for a change and then read its diff to decide whether it's any good. That makes **you** the bottleneck: everything upstream got faster and your review didn't. And a diff is a weak thing to review — you're eyeballing code for correctness, which is exactly the job a computer does better than you and never gets bored doing.
 
-The usual way to use a coding agent is to ask an expensive model for a change and then read the diff. That puts you — the slowest component — in the loop on every change.
+`pb` inverts that. Instead of an expensive model writing code you then check, an expensive model writes the **tests** — a precise, machine-checkable definition of "done" — and cheap models compete to satisfy them. A compiler decides who won, not you. You specify and approve; you never read a losing diff.
 
-`pb` moves the expensive model to where it earns its cost, and takes you out of the middle.
+> **One expensive agent writes the tests. Two cheap agents race to satisfy them. A compiler picks the winner.**
 
 ```
-pb run "add rate limiting to the public API routes"
+pb run -brief rate-limit.toml
 
-  spec     architect wrote 7 tests · frozen at a1b2c3d     $0.014
-  race     builder-a  worktree 1                           $0.048
-           builder-b  worktree 2                           $0.052
-  gate     builder-a  build ✓  lint ✓  tests 5/7   FAIL
-           builder-b  build ✓  lint ✓  tests 7/7   PASS
-  select   builder-b — only passing candidate
-  ship     feat/rate-limit · 2 files, +34 −6
+  spec     architect wrote 6 tests · frozen at a1b2c3d
+  race     sonnet    worktree 0
+           gpt-5.3   worktree 1
+  gate     sonnet    build ✓  lint ✓  tests 5/6   FAIL  C5
+           gpt-5.3   build ✓  lint ✓  tests 6/6   PASS
+  winner   gpt-5.3 — only passing candidate
+           2 files, +34 −6
 ```
 
 ## How it works
@@ -151,6 +151,33 @@ pb init                       # interactive setup, writes .pb.toml
 pb doctor --live              # confirms your agents and model flags work
 pb run -brief spec.toml       # spec, race, gate, select
 ```
+
+## Security
+
+`pb` runs coding agents automatically, in parallel, with no human watching each
+one. That is the whole point, and it is also the risk: an agent asked to
+implement a feature can run arbitrary commands, and a git worktree isolates
+files between builders — it is **not** a security boundary. Nothing stops a
+misbehaving or prompt-injected agent from reading `~/.ssh` or reaching the
+network unless something outside the agent does.
+
+So two things are load-bearing here, and neither is optional:
+
+- **Untrusted text is sanitised before it reaches a model.** Your brief, and
+  every example file it points at, is embedded into the prompt of every builder
+  and every repair round. It is redacted for credentials and stripped of
+  injection control tokens first, because otherwise a fixture containing
+  instruction-shaped text becomes an instruction to an agent with write access.
+- **Agents should run sandboxed, not with permissions bypassed.** Handing an
+  agent `--dangerously-skip-permissions` because it cannot answer a prompt
+  headlessly is the lazy answer and a real footgun. The intended model is a
+  per-run sandbox (a container, or macOS seatbelt) that denies network and
+  writes outside the worktree — so safety does not depend on the agent
+  cooperating. Running without a sandbox is an explicit, warned opt-in, never a
+  default.
+
+If you find a security issue, please open an issue marked security rather than a
+public PR with a proof of concept.
 
 ## Licence
 
