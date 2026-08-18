@@ -47,6 +47,12 @@ func (e Exec) Run(ctx context.Context, dir, prompt string) (Result, error) {
 	cmd := exec.CommandContext(ctx, e.Cmd, append(e.Args, prompt)...)
 	cmd.Dir = dir
 
+	// Close stdin explicitly. Agent CLIs run in "print" mode still block
+	// waiting for piped input when it is left open — claude -p stalls ~3s
+	// before giving up — and pb always passes the prompt as an argument, so
+	// there is never anything to read.
+	cmd.Stdin = nil
+
 	// Put the agent in its own process group. Agents start dev servers,
 	// file watchers and test runners; killing only the agent orphans them,
 	// and they go on holding ports in a worktree we are about to hand to
