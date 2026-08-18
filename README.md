@@ -154,30 +154,35 @@ pb run -brief spec.toml       # spec, race, gate, select
 
 ## Security
 
-`pb` runs coding agents automatically, in parallel, with no human watching each
-one. That is the whole point, and it is also the risk: an agent asked to
-implement a feature can run arbitrary commands, and a git worktree isolates
-files between builders — it is **not** a security boundary. Nothing stops a
-misbehaving or prompt-injected agent from reading `~/.ssh` or reaching the
-network unless something outside the agent does.
+`pb` runs coding agents and your project's own build and test commands
+automatically, in parallel, with nobody watching. To do that headlessly you
+have to pre-authorize the agent — and the lazy way, bypassing its permission
+prompts entirely, hands an unwatched process the freedom to read your keys,
+rewrite your shell profile, or exfiltrate over the network. A git worktree does
+not help: it separates files between builders, but it is **not** a security
+boundary.
 
-So two things are load-bearing here, and neither is optional:
+So every spawned process is **sandboxed** (macOS seatbelt, Linux bubblewrap),
+with two profiles for the two real cases:
 
-- **Untrusted text is sanitised before it reaches a model.** Your brief, and
-  every example file it points at, is embedded into the prompt of every builder
-  and every repair round. It is redacted for credentials and stripped of
-  injection control tokens first, because otherwise a fixture containing
-  instruction-shaped text becomes an instruction to an agent with write access.
-- **Agents should run sandboxed, not with permissions bypassed.** Handing an
-  agent `--dangerously-skip-permissions` because it cannot answer a prompt
-  headlessly is the lazy answer and a real footgun. The intended model is a
-  per-run sandbox (a container, or macOS seatbelt) that denies network and
-  writes outside the worktree — so safety does not depend on the agent
-  cooperating. Running without a sandbox is an explicit, warned opt-in, never a
-  default.
+- **Agents** keep network access — they have to reach a model — but can only
+  write inside their own worktree. A hijacked agent cannot touch the rest of
+  your machine.
+- **Build and test commands** run untrusted repository code, the likeliest
+  place for a bad dependency to act, so they get the same write confinement
+  **and no network at all**.
 
-If you find a security issue, please open an issue marked security rather than a
-public PR with a proof of concept.
+If no sandbox is available, `pb` refuses to run rather than quietly dropping the
+protection; running unconfined takes an explicit `sandbox.mode = "none"` and
+prints a warning. Separately, your brief and every example file it points at are
+redacted for credentials and stripped of injection tokens before they reach a
+model, because otherwise a fixture containing instruction-shaped text becomes an
+instruction to an agent with write access.
+
+It is not airtight — an agent with network could still read a file it is allowed
+to read and send it on. What the sandbox removes is the easy, high-impact
+damage. If you find a security issue, please open an issue marked security
+rather than a public PR with a proof of concept.
 
 ## Licence
 
