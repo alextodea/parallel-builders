@@ -30,6 +30,7 @@ import (
 	"github.com/alextodea/parallel-builders/internal/frozen"
 	"github.com/alextodea/parallel-builders/internal/gate"
 	"github.com/alextodea/parallel-builders/internal/pool"
+	"github.com/alextodea/parallel-builders/internal/prompt"
 	"github.com/alextodea/parallel-builders/internal/selector"
 )
 
@@ -45,6 +46,32 @@ type Options struct {
 
 	Pool *pool.Pool
 	Out  io.Writer
+
+	// prompts accumulates every prompt actually sent, so the run record can
+	// carry the version and total redaction count. Shared across the
+	// concurrent builders, so guarded.
+	prompts *promptLedger
+}
+
+// promptLedger records what was sent, for the run record. A changed prompt
+// version silently invalidates benchmark comparisons, so it is tracked rather
+// than assumed.
+type promptLedger struct {
+	mu       sync.Mutex
+	version  string
+	hash     string
+	redacted int
+}
+
+func (o Options) stampPrompt(s prompt.Set) {
+	if o.prompts == nil {
+		return
+	}
+	o.prompts.mu.Lock()
+	defer o.prompts.mu.Unlock()
+	o.prompts.version = s.Version
+	o.prompts.redacted += s.Redacted
+	o.prompts.hash = prompt.Hash(s)
 }
 
 // Outcome is the result of a whole run.
@@ -60,6 +87,11 @@ type Outcome struct {
 	// Escalated is set when no candidate passed and the round cap was hit.
 	Escalated bool
 	Route     string
+
+	// PromptVersion and Redacted go into the run record. A run whose prompt
+	// version differs from another's is not comparable to it.
+	PromptVersion string
+	Redacted      int
 }
 
 // Candidate is one builder's attempt after gating.
@@ -112,16 +144,20 @@ var (
 	ErrVacuous = errors.New("tests pass before the feature exists")
 )
 
-// Execute runs the pipeline.
-func Execute(ctx context.Context, o Options) (Outcome, error) {
-	var out Outcome
-
+// Execute runs the pipeline. Named returns so the deferred prompt-ledger flush
+// lands on the value actually returned.
+func Execute(ctx context.Context, o Options) (out Outcome, err error) {
 	if len(o.Builders) == 0 {
 		return out, errors.New("no builders configured")
 	}
 	if o.Out == nil {
 		o.Out = io.Discard
 	}
+	o.prompts = &promptLedger{}
+	defer func() {
+		out.PromptVersion = o.prompts.version
+		out.Redacted = o.prompts.redacted
+	}()
 
 	// Pin the base once. Re-reading HEAD later could hand two builders
 	// different starting code if the user commits mid-run.
@@ -213,8 +249,9 @@ func (o Options) spec(ctx context.Context, base string) (string, error) {
 
 	fmt.Fprintf(o.Out, "  spec     %s\n", o.Architect.Name())
 
-	prompt := SpecPrompt(o.Brief, o.Config)
-	if _, err := o.Architect.Run(ctx, w.Path, prompt); err != nil {
+	set := prompt.Spec(o.Brief, o.Config.Tests.Paths)
+	o.stampPrompt(set)
+	if _, err := o.Architect.Run(ctx, w.Path, set.Text); err != nil {
 		return "", fmt.Errorf("spec: architect: %w", err)
 	}
 
@@ -337,15 +374,16 @@ func (o Options) oneBuilder(ctx context.Context, i int, b agent.Runner, specSHA 
 	}
 	c.Worktree = w.Path
 
-	var prompt string
+	var set prompt.Set
 	if round == 1 {
-		prompt = BuildPrompt(o.Brief, o.Config)
+		set = prompt.Build(o.Brief, o.Config.Tests.Paths)
 	} else {
 		diff, _ := unifiedDiff(ctx, w.Path)
-		prompt = RepairPrompt(o.Brief, diff, prev[b.Name()], c.Tests.Note)
+		set = prompt.Repair(o.Brief, diff, prev[b.Name()], "")
 	}
+	o.stampPrompt(set)
 
-	if _, err := b.Run(ctx, w.Path, prompt); err != nil {
+	if _, err := b.Run(ctx, w.Path, set.Text); err != nil {
 		c.AgentErr = err
 		return c
 	}
