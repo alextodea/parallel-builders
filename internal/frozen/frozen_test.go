@@ -1,6 +1,9 @@
 package frozen
 
-import "testing"
+import (
+	"strings"
+	"testing"
+)
 
 func TestGuardCatchesTestEdits(t *testing.T) {
 	g := Guard{Patterns: []string{"**/*_test.go", "testdata/**"}}
@@ -54,5 +57,43 @@ func TestOwnsIdentifiesTheSuite(t *testing.T) {
 	}
 	if g.Owns("internal/pool/pool.go") {
 		t.Error("implementation must not be counted as part of the suite")
+	}
+}
+
+func TestCoverageBothDirections(t *testing.T) {
+	files := map[string]string{
+		"a_test.go": "func TestX(t *testing.T) { // pb:C1\n}\nfunc TestY(t *testing.T) { // pb:C2\n}",
+	}
+
+	t.Run("complete", func(t *testing.T) {
+		if rep := Coverage(files, []string{"C1", "C2"}); !rep.OK() {
+			t.Errorf("expected OK, got %+v", rep)
+		}
+	})
+
+	t.Run("a criterion nothing verifies", func(t *testing.T) {
+		// The dangerous direction: you approved C3 and the run goes green
+		// without ever checking it.
+		rep := Coverage(files, []string{"C1", "C2", "C3"})
+		if rep.OK() || len(rep.Uncovered) != 1 || rep.Uncovered[0] != "C3" {
+			t.Fatalf("expected C3 uncovered, got %+v", rep)
+		}
+		if !strings.Contains(rep.Error().Error(), "nothing verifies") {
+			t.Errorf("error should explain the risk: %v", rep.Error())
+		}
+	})
+
+	t.Run("a test claiming an invented requirement", func(t *testing.T) {
+		rep := Coverage(files, []string{"C1"})
+		if rep.OK() || len(rep.Orphaned) != 1 || rep.Orphaned[0] != "C2" {
+			t.Fatalf("expected C2 orphaned, got %+v", rep)
+		}
+	})
+}
+
+func TestMarkersAreDeduplicatedAndSorted(t *testing.T) {
+	got := Markers("// pb:C10\n// pb:C2\n// pb:C2\nnot pb:CX or pbC3")
+	if len(got) != 2 || got[0] != "C10" || got[1] != "C2" {
+		t.Fatalf("Markers = %v", got)
 	}
 }

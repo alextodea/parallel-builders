@@ -115,7 +115,12 @@ That ordering was deliberate. The subtle parts are the leaves — what disqualif
 
 ## Status
 
-Early. The design is settled; most of the implementation is not.
+`pb init` and `pb run` both work. The pipeline runs end to end — spec, race,
+gate, select, repair — verified against scripted agents, so none of it has
+spoken to a model yet.
+
+**Requires macOS or Linux.** Slot locking and process-group cleanup use unix
+semantics; on Windows use WSL.
 
 | | |
 |---|---|
@@ -123,8 +128,12 @@ Early. The design is settled; most of the implementation is not.
 | `internal/selector` | ✅ disqualifiers and the tie-break ladder |
 | `internal/escalate` | ✅ the failure-set comparison |
 | `internal/agent` | ✅ runner interface, exec and fake |
-| `internal/gate`, `record`, `config` | 🚧 partial |
-| `internal/pool`, `bench` | ⛔ stubs |
+| `internal/brief` | ✅ the specification as data, stable criterion ids |
+| `internal/pool` | ✅ one reusable worktree per builder |
+| `internal/gate` | ✅ deterministic checks + `go test -json` parsing |
+| `internal/run` | ✅ the five phases wired, including repair rounds |
+| `internal/config`, `setup`, `record` | 🚧 partial |
+| `internal/bench` | ⛔ stub |
 
 ## Building
 
@@ -133,7 +142,15 @@ go build ./cmd/pb
 go test ./...
 ```
 
-No dependencies yet, on purpose.
+One dependency: `BurntSushi/toml`.
+
+## Trying it
+
+```sh
+pb init                       # interactive setup, writes .pb.toml
+pb doctor --live              # confirms your agents and model flags work
+pb run -brief spec.toml       # spec, race, gate, select
+```
 
 ## Licence
 

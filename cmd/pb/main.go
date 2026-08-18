@@ -13,7 +13,7 @@ const usage = `pb — race cheap agents against a frozen test suite
 
 usage:
   pb init                 write a .pb.toml with sensible defaults
-  pb run <task>           spec, race, gate, select, report
+  pb run -brief <file>    spec, race, gate, select, report
   pb bench                run the arms and print the comparison
   pb doctor [--live]      check the configured agents work
                           --live actually runs each one (costs a little)
@@ -24,6 +24,7 @@ flags:
 
 func main() {
 	cfgPath := flag.String("c", config.FileName, "config file")
+	briefPath := flag.String("brief", "", "path to a brief file")
 	flag.Usage = func() { fmt.Fprint(os.Stderr, usage) }
 	flag.Parse()
 
@@ -32,21 +33,18 @@ func main() {
 		os.Exit(2)
 	}
 
-	if err := dispatch(flag.Arg(0), flag.Args()[1:], *cfgPath); err != nil {
+	if err := dispatch(flag.Arg(0), flag.Args()[1:], *cfgPath, *briefPath); err != nil {
 		fmt.Fprintln(os.Stderr, "pb:", err)
 		os.Exit(1)
 	}
 }
 
-func dispatch(cmd string, args []string, cfgPath string) error {
+func dispatch(cmd string, args []string, cfgPath, briefPath string) error {
 	switch cmd {
 	case "init":
 		return cmdInit(cfgPath)
 	case "run":
-		if len(args) == 0 {
-			return fmt.Errorf("run needs a task description")
-		}
-		return cmdRun(cfgPath, args[0])
+		return cmdRun(cfgPath, briefPath)
 	case "bench":
 		return cmdBench(cfgPath)
 	case "doctor":
@@ -55,25 +53,6 @@ func dispatch(cmd string, args []string, cfgPath string) error {
 	default:
 		return fmt.Errorf("unknown command %q", cmd)
 	}
-}
-
-func cmdRun(cfgPath, task string) error {
-	cfg, err := config.Load(cfgPath)
-	if err != nil {
-		return err
-	}
-
-	// The five phases. Each is a package that can be tested on its own.
-	//
-	// TODO 1  spec     architect writes tests; reject any that pass at base
-	//                  HEAD, because a test that passes before the feature
-	//                  exists is proving nothing
-	// TODO 2  race     claim a worktree per builder, run them concurrently
-	// TODO 3  gate     run the configured commands in each worktree
-	// TODO 4  select   disqualify, then walk the tie-break ladder
-	// TODO 5  report   append the run record, print the summary
-	_ = cfg
-	return fmt.Errorf("run: not implemented — task was %q", task)
 }
 
 func cmdBench(cfgPath string) error {

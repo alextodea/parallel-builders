@@ -284,3 +284,6 @@ func KillTree(dir string) error {
 	}
 	return nil
 }
+
+// Root is where this pool's slots live.
+func (p *Pool) Root() string { return p.root }
